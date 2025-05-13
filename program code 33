@@ -1,14 +1,36 @@
+
+
 #include <stdio.h>
 
 #define MAX_FRAMES 10
-#define MAX_PAGES 30
+#define MAX_PAGES 50
+
+int predict(int pages[], int frames[], int pageCount, int frameCount, int index) {
+    int pos = -1, farthest = index;
+    for (int i = 0; i < frameCount; i++) {
+        int j;
+        for (j = index; j < pageCount; j++) {
+            if (frames[i] == pages[j]) {
+                if (j > farthest) {
+                    farthest = j;
+                    pos = i;
+                }
+                break;
+            }
+        }
+        if (j == pageCount) {
+            return i; // This page won't be used again
+        }
+    }
+
+    return (pos == -1) ? 0 : pos;
+}
 
 int main() {
     int pages[MAX_PAGES], frames[MAX_FRAMES];
-    int pageCount, frameCount;
-    int i, j, k, pageFaults = 0, current = 0, found;
+    int pageCount, frameCount, pageFaults = 0;
+    int i, j, found, filled = 0;
 
-    // Input number of pages
     printf("Enter number of pages: ");
     scanf("%d", &pageCount);
 
@@ -17,11 +39,9 @@ int main() {
         scanf("%d", &pages[i]);
     }
 
-    // Input number of frames
     printf("Enter number of frames: ");
     scanf("%d", &frameCount);
 
-    // Initialize all frames to -1 (empty)
     for (i = 0; i < frameCount; i++) {
         frames[i] = -1;
     }
@@ -31,7 +51,7 @@ int main() {
     for (i = 0; i < pageCount; i++) {
         found = 0;
 
-        // Check if page is already in frame
+        // Check if page is already in frames
         for (j = 0; j < frameCount; j++) {
             if (frames[j] == pages[i]) {
                 found = 1;
@@ -39,27 +59,31 @@ int main() {
             }
         }
 
-        // If not found, replace using FIFO
         if (!found) {
-            frames[current] = pages[i];
-            current = (current + 1) % frameCount;
             pageFaults++;
 
-            // Print current frame status
+            if (filled < frameCount) {
+                frames[filled++] = pages[i];
+            } else {
+                int pos = predict(pages, frames, pageCount, frameCount, i + 1);
+                frames[pos] = pages[i];
+            }
+
+            // Print frames
             printf("%d\t", pages[i]);
-            for (k = 0; k < frameCount; k++) {
-                if (frames[k] != -1)
-                    printf("%d ", frames[k]);
+            for (j = 0; j < frameCount; j++) {
+                if (frames[j] != -1)
+                    printf("%d ", frames[j]);
                 else
                     printf("- ");
             }
             printf("\tYes\n");
         } else {
-            // If found, no page fault
+            // No page fault
             printf("%d\t", pages[i]);
-            for (k = 0; k < frameCount; k++) {
-                if (frames[k] != -1)
-                    printf("%d ", frames[k]);
+            for (j = 0; j < frameCount; j++) {
+                if (frames[j] != -1)
+                    printf("%d ", frames[j]);
                 else
                     printf("- ");
             }
